@@ -4,7 +4,7 @@ Represents an authenticated account holder who owns tasks.
 User management handled by Better Auth on frontend; backend references users via user_id.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlmodel import SQLModel, Field
 
@@ -33,7 +33,7 @@ class User(SQLModel, table=True):
 
     # Timestamps
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Account creation timestamp"
     )
 

@@ -10,6 +10,9 @@ services:
     environment:
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - DATABASE_URL=${DATABASE_URL}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:8000}
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/app
     command: uvicorn src.main:app --reload --host 0.0.0.0 --port 8000

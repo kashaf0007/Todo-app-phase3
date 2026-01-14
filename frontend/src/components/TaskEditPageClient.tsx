@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-client";
@@ -16,7 +16,7 @@ export default function TaskEditPageClient() {
   const queryClient = useQueryClient();
   const [error, setError] = useState("");
 
-  const taskId = parseInt(params.id as string);
+  const taskId = params && params.id ? parseInt(params.id as string) : NaN;
 
   // Fetch task details
   const {

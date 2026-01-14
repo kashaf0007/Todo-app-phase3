@@ -26,7 +26,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY . .
 
 # Expose port (Hugging Face Spaces typically uses port 7860 or 8000)
-EXPOSE 8000
+EXPOSE 7860
 
 # Run the application with uvicorn
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "7860"]

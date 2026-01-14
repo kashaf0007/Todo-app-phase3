@@ -4,7 +4,7 @@ Six REST endpoints for task management with strict user isolation.
 """
 
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from pydantic import BaseModel, Field
@@ -192,7 +192,7 @@ async def update_task(
     # Update fields
     task.title = task_data.title.strip()
     task.description = task_data.description.strip() if task_data.description else None
-    task.updated_at = datetime.utcnow()  # Explicitly update timestamp
+    task.updated_at = datetime.now(timezone.utc)  # Explicitly update timestamp
 
     session.add(task)
     session.commit()
@@ -262,7 +262,7 @@ async def toggle_task_completion(
 
     # Update completion status
     task.completed = completion_data.completed
-    task.updated_at = datetime.utcnow()  # Explicitly update timestamp
+    task.updated_at = datetime.now(timezone.utc)  # Explicitly update timestamp
 
     session.add(task)
     session.commit()

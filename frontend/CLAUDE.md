@@ -290,7 +290,7 @@ App runs at http://localhost:3000
 Create `.env.local` from `.env.local.example`:
 ```env
 BETTER_AUTH_SECRET=<same-as-backend>
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:7860
 ```
 
 ## Reference Documents

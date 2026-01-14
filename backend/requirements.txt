@@ -5,11 +5,13 @@ uvicorn[standard]==0.27.0
 # Database
 sqlmodel==0.0.14
 psycopg2-binary==2.9.9
+alembic==1.13.1
 
 # Authentication and Security
 python-jose[cryptography]==3.3.0
 python-multipart==0.0.6
 passlib[bcrypt]==1.7.4
+better-auth==0.0.3
 
 # Environment and Configuration
 python-dotenv==1.0.0
@@ -20,3 +22,13 @@ fastapi-cors==0.0.6
 # Validation
 pydantic==2.5.3
 pydantic-settings==2.1.0
+
+# RAG and AI
+cohere==5.5.3
+httpx==0.25.2
+
+# Rate limiting
+slowapi==0.1.9
+
+# Testing
+pytest==7.4.3

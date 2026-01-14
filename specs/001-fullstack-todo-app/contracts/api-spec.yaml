@@ -19,7 +19,7 @@ info:
   contact:
     name: Phase II Development Team
 servers:
-  - url: http://localhost:8000
+  - url: http://localhost:7860
     description: Local development server
   - url: https://api.todo-app.example.com
     description: Production server (placeholder)

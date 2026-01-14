@@ -1,0 +1,264 @@
+/* Toggle button styles */
+.toggle {
+  width: 50px;
+  height: 50px;
+  background-color: var(--ifm-color-primary); /* Primary theme color */
+  color: white; /* White icon/text */
+  border-radius: 50%; /* Circular shape */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Soft shadow */
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center the icon using flexbox */
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease; /* Smooth hover effect */
+  z-index: 9999; /* Stay above all content */
+  bottom: 20px; /* Fixed at bottom-right corner */
+  right: 20px;
+  position: fixed;
+}
+
+.toggle:hover {
+  transform: scale(1.1); /* Scale up slightly on hover */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
+}
+
+.toggle:active {
+  transform: scale(0.95); /* Scale down on active */
+}
+
+@media (max-width: 768px) {
+  .toggle {
+    width: 44px;
+    height: 44px; /* Shrinks to 44x44px on mobile */
+  }
+}
+
+/* Chat panel styles */
+.panel {
+  width: 350px;
+  max-width: calc(100vw - 1.5rem); /* Responsive with max-width based on viewport */
+  height: 65vh; /* Height limited with internal scrolling */
+  background-color: white;
+  border-radius: 12px; /* Rounded corners */
+  border: 1px solid #e2e8f0; /* Subtle border */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Soft shadow */
+  position: fixed;
+  bottom: 80px; /* Position at bottom-right with spacing */
+  right: 20px;
+  display: flex;
+  flex-direction: column; /* Flexbox column layout */
+  z-index: 9998; /* High z-index but below button */
+}
+
+.panel.panelHidden {
+  display: none; /* Hide panel when panelHidden class is applied */
+}
+
+@media (max-width: 1024px) {
+  .panel {
+    width: 320px;
+    max-width: calc(100vw - 1.5rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .panel {
+    width: calc(100vw - 1.5rem);
+    max-width: calc(100vw - 1.5rem);
+    height: 60vh;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 16px 16px 0 0; /* Rounded top corners only on mobile */
+  }
+}
+
+/* Chat panel header */
+.panelHeader {
+  padding: 12px 16px;
+  background-color: #f8fafc; /* Light background using theme emphasis colors */
+  color: inherit;
+  display: flex;
+  justify-content: space-between; /* Chatbot title on the left, close button on the right */
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Close button styles */
+.close-button {
+  color: #64748b; /* Gray color */
+  transition: color 0.2s ease;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.close-button:hover {
+  color: #0f172a; /* Darker gray on hover */
+  background-color: #f1f5f9;
+}
+
+/* Message bubble styles */
+.messageBubbleUser {
+  background-color: var(--ifm-color-primary);
+  color: white;
+  border-radius: 18px 18px 4px 18px;
+  padding: 8px 12px;
+  max-width: 80%;
+  margin-left: auto; /* Align right */
+  margin-bottom: 8px;
+  position: relative;
+  font-size: 0.9rem;
+}
+
+.messageBubbleAssistant {
+  background-color: #f1f5f9; /* Neutral color */
+  color: #334155;
+  border-radius: 18px 18px 18px 4px;
+  padding: 8px 12px;
+  max-width: 80%;
+  margin-right: auto; /* Align left */
+  margin-bottom: 8px;
+  position: relative;
+  font-size: 0.9rem;
+}
+
+.messageTimestamp {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: right;
+  margin-top: 4px;
+}
+
+.messageBubbleAssistant .messageTimestamp {
+  color: #64748b;
+}
+
+.sourcesContainer {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.sourceLink {
+  display: inline-block;
+  margin: 3px 1px;
+  padding: 3px 6px;
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  text-decoration: underline;
+  font-size: 0.7rem;
+  transition: background-color 0.2s ease;
+}
+
+.sourceLink:hover {
+  background-color: #cbd5e1;
+}
+
+.chunkCard {
+  margin-top: 6px;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  font-size: 0.8rem;
+}
+
+.inputArea {
+  padding: 12px;
+  border-top: 1px solid #e2e8f0;
+  background-color: white;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 40px;
+  max-height: 100px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  resize: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--ifm-color-primary-rgb), 0.2);
+}
+
+.sendButton {
+  background-color: var(--ifm-color-primary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sendButton:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.sendButton:not(:disabled):hover {
+  background-color: var(--ifm-color-primary-darker);
+}
+
+.loadingSpinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--ifm-color-primary);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.errorMessage {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: #64748b;
+  padding: 20px;
+}
+
+.emptyStateIcon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  color: #cbd5e1;
+}
+
+.emptyStateText {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}

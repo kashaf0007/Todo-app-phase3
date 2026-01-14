@@ -7,17 +7,5 @@ from fastapi import APIRouter
 
 router = APIRouter()
 
-
-@router.get("/health")
-async def health_check():
-    """
-    Health check endpoint.
-
-    Returns:
-        dict: Status message indicating API is healthy
-
-    Example:
-        GET /health
-        Response: {"status": "healthy"}
-    """
-    return {"status": "healthy"}
+# This router is intentionally left empty since health check is already defined in main.py
+# This file exists to maintain the directory structure and for potential future health-related endpoints

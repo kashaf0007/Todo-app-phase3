@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-client";
 
@@ -35,16 +35,22 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    // Mark as mounted to prevent server/client mismatch
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     // Redirect to login if not authenticated
-    if (!loading && !user) {
+    if (isMounted && !loading && !user) {
       router.push("/login");
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isMounted]);
 
   // Show loading state while checking authentication
-  if (loading) {
+  if (loading || !isMounted) {
     return (
       <div
         style={{

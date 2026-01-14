@@ -48,45 +48,57 @@ async def get_current_user(
         - Token signature verified using BETTER_AUTH_SECRET
         - Token expiration checked automatically
     """
-    settings = get_settings()
-
-    # Extract token from Authorization header
-    token = credentials.credentials
-
-    # Define credentials exception
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
     try:
-        # Verify JWT signature and decode payload
-        payload = jwt.decode(
-            token,
-            settings.better_auth_secret,
-            algorithms=["HS256"]  # Standard JWT algorithm
+        settings = get_settings()
+
+        # Extract token from Authorization header
+        token = credentials.credentials
+
+        # Define credentials exception
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-        # Extract user_id from payload
-        user_id: str = payload.get("sub")  # "sub" is standard JWT claim for user ID
+        try:
+            # Verify JWT signature and decode payload
+            payload = jwt.decode(
+                token,
+                settings.better_auth_secret,
+                algorithms=["HS256"]  # Standard JWT algorithm
+            )
 
-        if user_id is None:
+            # Extract user_id from payload
+            user_id: str = payload.get("sub")  # "sub" is standard JWT claim for user ID
+
+            if user_id is None:
+                raise credentials_exception
+
+        except JWTError as e:
+            # Token invalid, expired, or signature verification failed
+            print(f"JWT verification failed: {str(e)}")
             raise credentials_exception
 
-    except JWTError as e:
-        # Token invalid, expired, or signature verification failed
-        print(f"JWT verification failed: {str(e)}")
-        raise credentials_exception
+        # Fetch user from database
+        user = session.exec(select(User).where(User.id == user_id)).first()
 
-    # Fetch user from database
-    user = session.exec(select(User).where(User.id == user_id)).first()
+        if user is None:
+            # User not found (token references non-existent user)
+            raise credentials_exception
 
-    if user is None:
-        # User not found (token references non-existent user)
-        raise credentials_exception
-
-    return user
+        return user
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 401)
+        raise
+    except Exception as e:
+        # Catch any other unexpected errors and return 401 instead of 500
+        print(f"Unexpected error in get_current_user: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 async def verify_user_access(

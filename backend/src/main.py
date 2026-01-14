@@ -1,72 +1,55 @@
-"""
-FastAPI Application
-Main application initialization and configuration.
-"""
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-
-from .config import get_settings
-from .database import create_db_and_tables
-from .api.routes import health, tasks, auth
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Application lifespan manager.
-    Handles startup and shutdown events.
-    """
-    # Startup: Create database tables (skip if tables already exist)
-    print("Checking database tables...")
-    try:
-        create_db_and_tables()
-        print("Database initialized successfully")
-    except Exception as e:
-        print(f"Warning: Table creation skipped (tables may already exist): {e}")
-        print("Continuing with existing database schema...")
-
-    yield
-
-    # Shutdown: Cleanup if needed
-    print("Shutting down application...")
+from .api.chat_api import router as chat_router
+from .api.routes.tasks import router as tasks_router
+from .api.routes.auth import router as auth_router
+from .api.routes.health import router as health_router
+import os
+from dotenv import load_dotenv
+from .logging_config import setup_error_handlers
+from .security_config import setup_security
 
 
-# Get application settings
-settings = get_settings()
+# Load environment variables
+load_dotenv()
 
-# Initialize FastAPI application
+# Create FastAPI app
 app = FastAPI(
-    title=settings.api_title,
-    version=settings.api_version,
-    description=settings.api_description,
-    lifespan=lifespan,
+    title="RAG Todo Chatbot API",
+    description="API for the RAG-enhanced Todo Chatbot with natural language interface",
+    version="1.0.0"
 )
 
-# Configure CORS middleware
+# Add CORS middleware FIRST, before any other middleware
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:8000").split(",")
+# Ensure we include the frontend URL that's making the request
+default_origins = ["http://localhost:3000", "http://localhost:3001", "http://localhost:8000"]
+all_origins = list(set(allowed_origins + default_origins))  # Combine and deduplicate
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=all_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=600,
 )
 
-# Include routers
-app.include_router(health.router, tags=["Health"])
-app.include_router(auth.router, tags=["Authentication"])
-app.include_router(tasks.router, tags=["Tasks"])
+# Setup security measures
+setup_security(app)
 
+# Setup error handlers
+setup_error_handlers(app)
+
+# Include routers
+app.include_router(chat_router)
+app.include_router(tasks_router)
+app.include_router(auth_router)
+# Note: health_router is not included since we have a health endpoint in main.py
 
 @app.get("/")
-async def root():
-    """Root endpoint with API information"""
-    return {
-        "message": "Phase II Todo Application API",
-        "version": settings.api_version,
-        "docs": "/docs",
-        "health": "/health"
-    }
+def read_root():
+    return {"message": "Welcome to the RAG Todo Chatbot API"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "RAG Todo Chatbot API"}

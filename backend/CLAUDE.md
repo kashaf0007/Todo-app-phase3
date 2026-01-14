@@ -168,7 +168,7 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 ### Health Check
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:7860/health
 # Expected: {"status": "healthy"}
 ```
 

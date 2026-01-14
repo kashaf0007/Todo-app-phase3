@@ -143,7 +143,7 @@ export function isAuthenticated(): boolean {
  */
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(typeof window !== 'undefined'); // Start with loading state based on client availability
+  const [loading, setLoading] = useState(true); // Always start with loading state to prevent hydration mismatch
 
   useEffect(() => {
     // Only run on client side

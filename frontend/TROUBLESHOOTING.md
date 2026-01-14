@@ -4,7 +4,7 @@
 
 ### 1. Environment Variables
 **Problem**: API calls failing in production
-**Solution**: 
+**Solution**:
 - Ensure `NEXT_PUBLIC_API_URL` is set in Vercel dashboard
 - Go to: Vercel Dashboard → Your Project → Settings → Environment Variables
 - Add: `NEXT_PUBLIC_API_URL` with value pointing to your backend API
@@ -14,7 +14,7 @@
 **Solution**:
 - Make sure your backend API is deployed and publicly accessible
 - If using localhost in development, update to your actual backend URL for production
-- Example: Change from `http://localhost:8000` to `https://your-backend.vercel.app` or your actual backend URL
+- Example: Change from `http://localhost:7860` to `https://your-backend.vercel.app` or your actual backend URL
 
 ### 3. Build Errors
 **Problem**: Deployment fails during build process

@@ -53,7 +53,7 @@ export function Navigation() {
   return (
     <nav className="nav-container bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-lg">
       <div className="nav-content">
-        <Link href="/tasks" className="nav-logo text-white hover:text-primary-200 transition-colors">
+        <Link href="/authenticated/tasks" className="nav-logo text-white hover:text-primary-200 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
@@ -64,7 +64,7 @@ export function Navigation() {
         <div className="nav-desktop">
           {user && (
             <div className="nav-links">
-              <Link href="/tasks" className="nav-link text-white hover:text-primary-200 transition-colors">
+              <Link href="/authenticated/tasks" className="nav-link text-white hover:text-primary-200 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
@@ -122,7 +122,7 @@ export function Navigation() {
           <div className="nav-mobile-content">
             {user ? (
               <>
-                <Link href="/tasks" className="nav-mobile-link text-white hover:text-primary-200 transition-colors" onClick={() => setIsMenuOpen(false)}>
+                <Link href="/authenticated/tasks" className="nav-mobile-link text-white hover:text-primary-200 transition-colors" onClick={() => setIsMenuOpen(false)}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>

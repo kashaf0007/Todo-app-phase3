@@ -72,7 +72,7 @@ BETTER_AUTH_SECRET=<your-generated-secret-here>
 DATABASE_URL=postgresql://username:password@host/database?sslmode=require
 
 # API Base URL (for frontend)
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:7860
 ```
 
 **Get Neon DATABASE_URL**:
@@ -106,7 +106,7 @@ Frontend `.env.local` should contain:
 
 ```env
 BETTER_AUTH_SECRET=<same-secret-as-root-.env>
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:7860
 ```
 
 **Critical**: All three files (root `.env`, `backend/.env`, `frontend/.env.local`) MUST use the same `BETTER_AUTH_SECRET` value.

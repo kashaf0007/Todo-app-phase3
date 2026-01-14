@@ -3,7 +3,7 @@ Authentication Routes
 Better Auth compatible endpoints for user registration and login
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -69,7 +69,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(user_id: str, email: str) -> str:
     """Create a JWT access token"""
-    expires = datetime.utcnow() + timedelta(days=7)
+    expires = datetime.now(timezone.utc) + timedelta(days=7)
     to_encode = {
         "sub": user_id,
         "email": email,
@@ -110,7 +110,7 @@ async def sign_up(
         id=user_id,
         email=request.email.lower(),
         password_hash=hash_password(request.password),
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
 
     session.add(new_user)
@@ -132,7 +132,7 @@ async def sign_up(
         },
         "session": {
             "token": token,
-            "expiresAt": (datetime.utcnow() + timedelta(days=7)).isoformat()
+            "expiresAt": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
         }
     }
 
@@ -179,7 +179,7 @@ async def sign_in(
         },
         "session": {
             "token": token,
-            "expiresAt": (datetime.utcnow() + timedelta(days=7)).isoformat()
+            "expiresAt": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
         }
     }
 

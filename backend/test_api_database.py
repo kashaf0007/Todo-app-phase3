@@ -6,7 +6,7 @@ import requests
 import json
 from datetime import datetime
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:7860"
 
 print("=" * 80)
 print("API-BASED DATABASE VERIFICATION TEST")

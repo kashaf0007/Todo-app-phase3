@@ -111,7 +111,7 @@ cd backend && python -m py_compile src/**/*.py
 - ✅ All modules compile successfully
 
 ### Runtime Validation
-**Server Status:** Running on http://localhost:8000
+**Server Status:** Running on http://localhost:7860
 **Health Check:** ✅ Healthy
 ```bash
 GET /health

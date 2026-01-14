@@ -1,0 +1,530 @@
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  tool_calls?: any[];
+}
+
+interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  priority?: string;
+  category?: string;
+  status?: string;
+  due_date?: string;
+  completed: boolean;
+}
+
+const RagChatImproved = () => {
+  const [userInput, setUserInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState('');
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [showTaskPanel, setShowTaskPanel] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Initialize with a random user ID (in a real app, this would come from auth)
+  useEffect(() => {
+    const randomUserId = `user_${Date.now()}`;
+    setUserId(randomUserId);
+  }, []);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!userInput.trim() || isLoading) return;
+
+    // Add user message to the chat
+    const userMessage: Message = { role: 'user', content: userInput, timestamp: new Date() };
+    setMessages(prev => [...prev, userMessage]);
+    setUserInput('');
+    setIsLoading(true);
+
+    try {
+      // Send message to backend
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/${userId}/chat`,
+        {
+          conversation_id: conversationId,
+          message: userInput
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const { conversation_id, response: botResponse, tool_calls } = response.data;
+
+      // Update conversation ID if it's the first message
+      if (!conversationId) {
+        setConversationId(conversation_id);
+      }
+
+      // Add bot response to the chat
+      const botMessage: Message = {
+        role: 'assistant',
+        content: botResponse,
+        tool_calls: tool_calls,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, botMessage]);
+
+      // Update tasks if any task-related operations occurred
+      if (tool_calls && tool_calls.length > 0) {
+        const taskOperations = tool_calls.filter(call =>
+          call.tool_name.includes('task')
+        );
+        if (taskOperations.length > 0) {
+          // Refresh tasks after operations
+          refreshTasks();
+        }
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error processing your request.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshTasks = async () => {
+    if (!userId) {
+      // Don't fetch tasks if userId is not set yet
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/${userId}/tasks`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth-token') || ''}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      setTasks(response.data);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Load tasks when component mounts
+    refreshTasks();
+  }, []);
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const toggleTaskPanel = () => {
+    setShowTaskPanel(!showTaskPanel);
+  };
+
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
+    }
+  }, [userInput]);
+
+  return (
+    <div className="flex flex-col h-full max-h-[calc(100vh-2rem)] bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 flex-1">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+          <div className="flex-1 flex items-center gap-2 sm:gap-3">
+            <div className="bg-white/20 p-2 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-sm sm:text-base md:text-lg font-bold">RAG Todo Chatbot</h1>
+              <p className="text-indigo-200 text-xs sm:text-sm">Manage your tasks with natural language</p>
+            </div>
+          </div>
+          <button
+            onClick={toggleTaskPanel}
+            className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition-all duration-200 flex items-center gap-1 sm:gap-2 whitespace-nowrap"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            {showTaskPanel ? 'Hide Tasks' : 'Show Tasks'}
+          </button>
+        </div>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden flex-col">
+        {/* Task Panel - Mobile view */}
+        {showTaskPanel && (
+          <div className="md:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-end p-2">
+            <div className="w-full max-w-md bg-white shadow-xl rounded-t-xl p-4 overflow-y-auto max-h-[80vh] transform transition-transform duration-300 ease-in-out">
+              <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
+                <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  Your Tasks
+                </h2>
+                <button
+                  onClick={toggleTaskPanel}
+                  className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {tasks.length === 0 ? (
+                <div className="text-center py-6">
+                  <div className="mx-auto bg-gray-100 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-500 text-sm">No tasks yet. Add some tasks using the chat!</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className={`p-3 rounded-xl border text-xs ${
+                        task.completed
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`font-medium truncate ${
+                            task.completed ? 'line-through text-gray-500' : 'text-gray-800'
+                          }`}>
+                            {task.title}
+                          </h3>
+                          {task.description && (
+                            <p className="text-xs text-gray-600 mt-1 truncate">{task.description}</p>
+                          )}
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {task.priority && (
+                              <span className={`text-[0.6rem] px-1.5 py-0.5 rounded-full ${
+                                task.priority === 'HIGH'
+                                  ? 'bg-red-100 text-red-800'
+                                  : task.priority === 'MEDIUM'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-green-100 text-green-800'
+                              }`}>
+                                {task.priority}
+                              </span>
+                            )}
+                            {task.category && (
+                              <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                                {task.category}
+                              </span>
+                            )}
+                            {task.status && (
+                              <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                                {task.status.replace('_', ' ')}
+                              </span>
+                            )}
+                            {task.due_date && (
+                              <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-800 flex items-center gap-0.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                {new Date(task.due_date).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="ml-2 flex-shrink-0 flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={task.completed}
+                            onChange={() => {}}
+                            className="h-4 w-4 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                            disabled
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Desktop Task Panel */}
+        <div className={`${showTaskPanel ? 'hidden md:flex' : 'hidden'} w-full md:w-1/2 lg:w-2/5 bg-white p-3 overflow-y-auto max-h-[calc(100vh-8rem)] border-r border-gray-200`}>
+          <div className="w-full">
+            <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
+              <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Your Tasks
+              </h2>
+            </div>
+            {tasks.length === 0 ? (
+              <div className="text-center py-6">
+                <div className="mx-auto bg-gray-100 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <p className="text-gray-500 text-sm">No tasks yet. Add some tasks using the chat!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className={`p-3 rounded-xl border text-xs ${
+                      task.completed
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`font-medium truncate ${
+                          task.completed ? 'line-through text-gray-500' : 'text-gray-800'
+                        }`}>
+                          {task.title}
+                        </h3>
+                        {task.description && (
+                          <p className="text-xs text-gray-600 mt-1 truncate">{task.description}</p>
+                        )}
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {task.priority && (
+                            <span className={`text-[0.6rem] px-1.5 py-0.5 rounded-full ${
+                              task.priority === 'HIGH'
+                                ? 'bg-red-100 text-red-800'
+                                : task.priority === 'MEDIUM'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-green-100 text-green-800'
+                            }`}>
+                              {task.priority}
+                            </span>
+                          )}
+                          {task.category && (
+                            <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                              {task.category}
+                            </span>
+                          )}
+                          {task.status && (
+                            <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                              {task.status.replace('_', ' ')}
+                            </span>
+                          )}
+                          {task.due_date && (
+                            <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-800 flex items-center gap-0.5">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              {new Date(task.due_date).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="ml-2 flex-shrink-0 flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={task.completed}
+                          onChange={() => {}}
+                          className="h-4 w-4 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Chat Container */}
+        <div className={`${showTaskPanel ? 'md:w-3/5 lg:w-2/3' : 'w-full'} flex flex-col bg-white flex-1`}>
+          {/* Conversation Context Indicator */}
+          <div className="border-b border-gray-200 p-2 bg-gray-50">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 text-xs">
+              <div className="text-gray-600 break-all max-w-[70%] flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+                {conversationId ? (
+                  <span>Conv: {conversationId.substring(0, 8)}...</span>
+                ) : (
+                  <span>New conversation</span>
+                )}
+              </div>
+              <div className="text-gray-600 break-all max-w-[70%] flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                {userId && <span>User: {userId.substring(0, 8)}...</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ maxHeight: 'calc(100vh - 140px)' }}>
+            {messages.length === 0 ? (
+              <div className="text-center text-gray-600 mt-6 px-2">
+                <div className="mx-auto bg-indigo-100 p-3 rounded-full w-14 h-14 flex items-center justify-center mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                </div>
+                <h3 className="text-base font-bold text-gray-800 mb-2">Welcome to the RAG Todo Chatbot!</h3>
+                <p className="mb-4 text-sm text-gray-600">How can I help you manage your tasks today?</p>
+                <div className="grid grid-cols-1 gap-2 max-w-xs mx-auto">
+                  <div className="bg-indigo-50 rounded-lg p-2 text-left border border-indigo-100 text-xs">
+                    <p className="font-medium text-indigo-700 flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Try: "Add a task to buy groceries"
+                    </p>
+                  </div>
+                  <div className="bg-indigo-50 rounded-lg p-2 text-left border border-indigo-100 text-xs">
+                    <p className="font-medium text-indigo-700 flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Or: "Show me my tasks"
+                    </p>
+                  </div>
+                  <div className="bg-indigo-50 rounded-lg p-2 text-left border border-indigo-100 text-xs">
+                    <p className="font-medium text-indigo-700 flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Also: "Mark task 1 as complete"
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-4 text-xs text-gray-500 flex items-center justify-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  This chatbot remembers your conversation history.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {messages.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[90%] rounded-2xl p-3 transition-all duration-200 ${
+                        msg.role === 'user'
+                          ? 'bg-indigo-500 text-white rounded-br-none'
+                          : 'bg-gray-100 text-gray-800 rounded-bl-none'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1 mb-1">
+                        <div className="flex items-center gap-1">
+                          {msg.role === 'user' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                            </svg>
+                          )}
+                          <span className="text-xs opacity-80">
+                            {msg.role === 'user' ? 'You' : 'Assistant'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-sm">{msg.content}</div>
+                      <div className="text-xs opacity-70 mt-1 text-right">
+                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[90%] rounded-2xl p-3 bg-gray-100 text-gray-800 rounded-bl-none">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 bg-gray-500 rounded-full animate-bounce"></div>
+                        <div className="h-2 w-2 bg-gray-500 rounded-full animate-bounce delay-75"></div>
+                        <div className="h-2 w-2 bg-gray-500 rounded-full animate-bounce delay-150"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+
+          {/* Input Area */}
+          <div className="border-t border-gray-200 p-3 bg-white">
+            <div className="flex items-end gap-2">
+              <textarea
+                ref={textareaRef}
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Type your message..."
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent"
+                rows={1}
+                disabled={isLoading}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={isLoading || !userInput.trim()}
+                className={`p-2.5 rounded-full ${
+                  isLoading || !userInput.trim()
+                    ? 'bg-gray-200 text-gray-400'
+                    : 'bg-indigo-500 text-white hover:bg-indigo-600'
+                } transition-colors duration-200`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RagChatImproved;

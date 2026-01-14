@@ -3,6 +3,8 @@
  * Modern design system with consistent color palette and typography
  */
 
+@import '../styles/floating-chat.css';
+
 :root {
   /* Color Palette */
   --primary-50: #f0f9ff;

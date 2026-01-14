@@ -5,9 +5,7 @@
 
 "use client";
 
-import dynamic from 'next/dynamic';
-
-const AppProviderWithTasks = dynamic(() => import('@/components/AppProviderWithTasks'), { ssr: false });
+import AppProviderWithTasks from '@/components/AppProviderWithTasks';
 
 export default function TasksPage() {
   return <AppProviderWithTasks />;

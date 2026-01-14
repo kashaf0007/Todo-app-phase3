@@ -17,21 +17,39 @@
   the iteration process.
 -->
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: Python 3.11, TypeScript/JavaScript
+**Primary Dependencies**: FastAPI, Cohere RAG, Better Auth, SQLModel, Neon PostgreSQL
+**Storage**: Neon PostgreSQL database with tasks, conversations, and messages tables
+**Testing**: pytest for backend, Jest/Cypress for frontend
+**Target Platform**: Web application (frontend + backend architecture)
+**Project Type**: Full-stack web application with RAG-enhanced chat interface
+**Performance Goals**: <200ms response time for chat interactions, support 1000+ concurrent users
+**Constraints**: Stateless server design, MCP tool integration for all task operations, RAG context retrieval
+**Scale/Scope**: Multi-user todo application with conversation history and context-aware responses
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+**Spec-Driven Development Compliance**:
+- [ ] Specification complete and reviewed before implementation
+- [ ] No manual coding - all implementation via Claude Code with Spec-Kit Plus
+
+**Full-Stack Architecture Compliance**:
+- [ ] Cohere-powered RAG chat UI frontend implemented
+- [ ] Python FastAPI backend with MCP integration
+- [ ] Natural language interface for all todo features
+- [ ] Stateless server with Neon PostgreSQL storage
+
+**MCP Tool Integration Compliance**:
+- [ ] All task operations use MCP tools (add_task, list_tasks, complete_task, delete_task, update_task)
+- [ ] Standardized responses with task_id, status, and title
+- [ ] Natural language detection for appropriate tool invocation
+
+**RAG-Enhanced Functionality Compliance**:
+- [ ] RAG integration using Cohere technology
+- [ ] Historical task and context querying
+- [ ] Context-aware responses based on conversation history
 
 ## Project Structure
 
@@ -48,32 +66,25 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
+# Web application structure
 backend/
 ├── src/
 │   ├── models/
+│   │   ├── __init__.py
+│   │   └── task.py
 │   ├── services/
-│   └── api/
+│   │   ├── __init__.py
+│   │   └── task_service.py
+│   ├── api/
+│   │   ├── __init__.py
+│   │   └── chat_api.py
+│   ├── mcp/
+│   │   ├── __init__.py
+│   │   └── tools.py
+│   └── main.py
+├── requirements.txt
 └── tests/
 
 frontend/
@@ -81,18 +92,17 @@ frontend/
 │   ├── components/
 │   ├── pages/
 │   └── services/
+├── package.json
 └── tests/
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
+migrations/
+└── [database migration scripts]
 
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+.specs/
+└── [specification files]
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Full-stack web application with separate backend (FastAPI/MCP/RAG) and frontend (Cohere Chat UI) components, with Neon PostgreSQL database for persistent storage.
 
 ## Complexity Tracking
 

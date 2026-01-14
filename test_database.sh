@@ -1,7 +1,7 @@
 #!/bin/bash
 # Database verification test using curl
 
-BASE_URL="http://localhost:8000"
+BASE_URL="http://localhost:7860"
 TIMESTAMP=$(date +%s)
 TEST_EMAIL="test_${TIMESTAMP}@example.com"
 TEST_PASSWORD="TestPassword123!"

@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ClientNavigation from '../components/ClientNavigation';
 import TaskEditPageClient from '../components/TaskEditPageClient';
+import FloatingChatButton from '../components/FloatingChatButtonNew';
 
 export default function AppProviderWithTaskEdit() {
   const queryClientRef = useRef<QueryClient | null>(null);
@@ -21,11 +22,12 @@ export default function AppProviderWithTaskEdit() {
 
   return (
     <QueryClientProvider client={queryClientRef.current}>
-      <div className="app-container">
+      <div className="app-container relative">
         <ClientNavigation />
         <main>
           <TaskEditPageClient />
         </main>
+        <FloatingChatButton />
       </div>
     </QueryClientProvider>
   );

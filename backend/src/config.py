@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     api_description: str = "REST API for multi-user todo application with JWT authentication"
 
     # CORS Configuration
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:3000", "https://hackathon2-phase1-five.vercel.app"]
     """Allowed origins for CORS (frontend URLs)"""
 
     cors_allow_credentials: bool = True
