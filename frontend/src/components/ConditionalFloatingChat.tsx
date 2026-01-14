@@ -16,7 +16,7 @@ export default function ConditionalFloatingChat({ children }: ConditionalFloatin
   const router = useRouter();
 
   // Don't show on login/signup pages
-  const shouldShowChatButton = !pathname.includes('/login') && !pathname.includes('/signup');
+  const shouldShowChatButton = pathname && !pathname.includes('/login') && !pathname.includes('/signup');
 
   // Redirect to login if not authenticated and not on public pages
   useEffect(() => {

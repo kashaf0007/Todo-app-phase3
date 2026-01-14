@@ -15,7 +15,7 @@ const FloatingChatButton = () => {
 
   // Don't show on login/signup pages
   const excludedPaths = ['/login', '/signup'];
-  const shouldShow = !excludedPaths.some(path => pathname.startsWith(path));
+  const shouldShow = !pathname || !excludedPaths.some(path => pathname.startsWith(path));
 
   if (!shouldShow) {
     return null;
