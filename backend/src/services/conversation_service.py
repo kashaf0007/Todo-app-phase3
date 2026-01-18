@@ -15,7 +15,7 @@ class ConversationService:
         return conversation
 
     @staticmethod
-    def get_conversation(session: Session, conversation_id: int, user_id: str) -> Optional[Conversation]:
+    def get_conversation(session: Session, conversation_id: str, user_id: str) -> Optional[Conversation]:
         query = select(Conversation).where(
             Conversation.id == conversation_id,
             Conversation.user_id == user_id
@@ -38,9 +38,8 @@ class ConversationService:
         return session.exec(query).all()
 
     @staticmethod
-    def add_message(session: Session, user_id: str, conversation_id: int, role: str, content: str) -> Message:
+    def add_message(session: Session, user_id: str, conversation_id: str, role: str, content: str) -> Message:
         message = Message(
-            user_id=user_id,
             conversation_id=conversation_id,
             role=role,
             content=content
@@ -51,9 +50,10 @@ class ConversationService:
         return message
 
     @staticmethod
-    def get_conversation_messages(session: Session, conversation_id: int, user_id: str) -> List[Message]:
+    def get_conversation_messages(session: Session, conversation_id: str, user_id: str) -> List[Message]:
+        # Note: We can't filter by user_id in messages table since it doesn't have that column
+        # So we rely on the conversation belonging to the user (checked elsewhere)
         query = select(Message).where(
-            Message.conversation_id == conversation_id,
-            Message.user_id == user_id
+            Message.conversation_id == conversation_id
         ).order_by(Message.created_at)
         return session.exec(query).all()

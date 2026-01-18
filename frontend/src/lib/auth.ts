@@ -1,22 +1,7 @@
 /**
- * Better Auth Client Configuration
- * JWT-based authentication for Phase II Todo Application
+ * Auth Utilities
+ * Server-side utilities for interacting with authentication
  */
-
-import { createAuthClient } from "better-auth/react";
-
-/**
- * Better Auth React client
- *
- * Features:
- * - JWT token strategy for stateless authentication
- * - Email/password authentication
- * - Session persistence across browser refreshes
- * - 7-day session duration (per spec Assumption 2)
- */
-export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
-});
 
 /**
  * Auth hook types for TypeScript
@@ -39,12 +24,7 @@ export type Session = {
  */
 export async function getAuthToken(): Promise<string | null> {
   try {
-    // Get session using authClient
-    const sessionResult = await authClient.$fetch("/api/auth/get-session") as any;
-    if (sessionResult?.data) {
-      // Extract token from session
-      return sessionResult.data.token || null;
-    }
+    // This function is kept for compatibility with existing code
     return null;
   } catch (error) {
     console.error("Failed to get auth token:", error);
@@ -58,7 +38,7 @@ export async function getAuthToken(): Promise<string | null> {
  */
 export async function clearSession(): Promise<void> {
   try {
-    await authClient.signOut();
+    // This function is kept for compatibility with existing code
   } catch (error) {
     console.error("Failed to clear session:", error);
   }

@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "devtools": {
+    "inspector": {
+      "enabled": true,
+      "features": [
+        "console",
+        "network",
+        "elements",
+        "sources",
+        "performance",
+        "memory",
+        "application"
+      ]
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "port": 9229
+  }
+}

@@ -3,8 +3,9 @@ API Dependencies
 JWT verification and authentication dependencies for FastAPI.
 """
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional
+from fastapi import Depends, HTTPException, status, Request
+from fastapi.security import HTTPBearer
 from jose import JWTError, jwt
 from sqlmodel import Session, select
 
@@ -18,20 +19,21 @@ security = HTTPBearer()
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
     session: Session = Depends(get_session),
-) -> User:
+) -> Optional[User]:
     """
     JWT verification dependency to extract authenticated user.
 
     Verifies JWT token signature, expiration, and extracts user identity.
+    Skips authentication for OPTIONS requests (preflight).
 
     Args:
-        credentials: HTTP Bearer token from Authorization header
+        request: FastAPI request object
         session: Database session
 
     Returns:
-        User: Authenticated user object
+        User: Authenticated user object, or None for OPTIONS requests
 
     Raises:
         HTTPException: 401 Unauthorized if token is missing, invalid, or expired
@@ -48,11 +50,27 @@ async def get_current_user(
         - Token signature verified using BETTER_AUTH_SECRET
         - Token expiration checked automatically
     """
+    # Skip authentication for OPTIONS requests (preflight requests)
+    # These should be handled by the CORS middleware
+    if request.method.upper() == "OPTIONS":
+        # For OPTIONS requests, we don't need to authenticate
+        # The CORS middleware will handle these automatically
+        return None
+
     try:
         settings = get_settings()
 
         # Extract token from Authorization header
-        token = credentials.credentials
+        # We need to get the token manually since we're not using the security dependency directly
+        authorization_header = request.headers.get("Authorization")
+        if not authorization_header or not authorization_header.startswith("Bearer "):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        token = authorization_header[7:]  # Remove "Bearer " prefix
 
         # Define credentials exception
         credentials_exception = HTTPException(
@@ -102,18 +120,18 @@ async def get_current_user(
 
 
 async def verify_user_access(
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_current_user),
     path_user_id: str = None,
-) -> User:
+) -> Optional[User]:
     """
     Verify that authenticated user matches path user_id (if provided).
 
     Args:
-        current_user: Authenticated user from JWT
+        current_user: Authenticated user from JWT, or None for OPTIONS requests
         path_user_id: User ID from URL path parameter (optional)
 
     Returns:
-        User: Authenticated user if access granted
+        User: Authenticated user if access granted, or None for OPTIONS requests
 
     Raises:
         HTTPException: 403 Forbidden if user_id mismatch
@@ -131,6 +149,9 @@ async def verify_user_access(
             # Always use current_user.id for queries
             tasks = session.query(Task).filter(Task.user_id == current_user.id).all()
     """
+    if current_user is None:  # For OPTIONS requests
+        return None
+
     if path_user_id and path_user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

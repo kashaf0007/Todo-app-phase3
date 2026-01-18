@@ -3,13 +3,12 @@ from sqlalchemy import event
 from sqlalchemy.pool import Pool
 import os
 from typing import Generator
+from .config import get_settings
 
-
-# Get database URL from environment variable
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./todo_app.db")
+settings = get_settings()
 
 # Create engine
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(settings.database_url, echo=True)
 
 
 def get_session() -> Generator[Session, None, None]:

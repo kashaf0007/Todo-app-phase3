@@ -16,8 +16,15 @@ from pydantic import BaseModel, validator
 from typing import Optional
 
 
-# Initialize rate limiter
-limiter = Limiter(key_func=get_remote_address)
+# Initialize rate limiter with a custom key function to avoid conflicts
+def get_request_identifier(request: Request):
+    # Create a unique identifier for the request that avoids conflicts with FastAPI's request object
+    client_host = get_remote_address(request)
+    # You can add more identifying elements here if needed
+    return client_host
+
+
+limiter = Limiter(key_func=get_request_identifier)
 
 
 class SecurityMiddleware(BaseHTTPMiddleware):
@@ -29,10 +36,25 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         # Perform security checks before processing the request
         await self.security_checks(request)
 
-        # Add security headers
-        response = await call_next(request)
+        try:
+            # Add security headers
+            response = await call_next(request)
+        except Exception as e:
+            # If there's an exception in the call_next chain, let it propagate
+            # properly to the exception handlers
+            raise
 
-        # Set security headers
+        # Ensure response is a proper Response object before adding headers
+        from starlette.responses import Response
+        if not isinstance(response, Response):
+            # If response is not a Response object, return as-is
+            return response
+
+        # For preflight requests (OPTIONS), don't add security headers that might interfere with CORS
+        if request.method.upper() == "OPTIONS":
+            return response
+
+        # Set security headers for non-preflight requests
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
@@ -48,7 +70,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
             "img-src 'self' data: https://fastapi.tiangolo.com https://cdn.jsdelivr.net",
             "font-src 'self' https://cdn.jsdelivr.net",
-            "connect-src 'self'",
+            "connect-src 'self' http://localhost:3000 http://127.0.0.1:3000",
             "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'"
@@ -61,6 +83,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         """
         Perform various security checks on the incoming request
         """
+        # Skip security checks for preflight requests (OPTIONS)
+        if request.method.upper() == "OPTIONS":
+            return
+
         # Check for suspicious headers
         suspicious_headers = [
             'x-forwarded-for',

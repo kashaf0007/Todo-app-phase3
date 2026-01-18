@@ -1,0 +1,13 @@
+To fix the CORS error, please follow these steps:
+
+1. Stop your current backend server (press Ctrl+C in the terminal where it's running)
+
+2. Navigate to the backend directory:
+   cd backend
+
+3. Start the server again with:
+   uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+4. Your backend server will now have the updated authentication code that properly handles OPTIONS requests for CORS preflight checks.
+
+After restarting the server, the CORS error should be resolved.

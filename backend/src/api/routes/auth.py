@@ -6,7 +6,7 @@ Better Auth compatible endpoints for user registration and login
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlmodel import Session, select
 from pydantic import BaseModel
 from jose import JWTError, jwt
@@ -46,7 +46,8 @@ class UserResponse(BaseModel):
 
 class SessionResponse(BaseModel):
     user: UserResponse
-    session: dict
+    token: str
+    expiresAt: str
 
 
 # Helper functions
@@ -86,7 +87,7 @@ def create_access_token(user_id: str, email: str) -> str:
 # Routes
 @router.post("/sign-up/email")
 async def sign_up(
-    request: SignUpRequest,
+    request_data: SignUpRequest,
     session: Session = Depends(get_session)
 ):
     """
@@ -95,7 +96,7 @@ async def sign_up(
     Compatible with Better Auth sign-up flow
     """
     # Check if user already exists
-    statement = select(User).where(User.email == request.email.lower())
+    statement = select(User).where(User.email == request_data.email.lower())
     existing_user = session.exec(statement).first()
 
     if existing_user:
@@ -108,8 +109,8 @@ async def sign_up(
     user_id = str(uuid.uuid4())
     new_user = User(
         id=user_id,
-        email=request.email.lower(),
-        password_hash=hash_password(request.password),
+        email=request_data.email.lower(),
+        password_hash=hash_password(request_data.password),
         created_at=datetime.now(timezone.utc)
     )
 
@@ -125,7 +126,7 @@ async def sign_up(
         "user": {
             "id": new_user.id,
             "email": new_user.email,
-            "name": request.name or new_user.email.split("@")[0],
+            "name": request_data.name or new_user.email.split("@")[0],
             "emailVerified": False,
             "createdAt": new_user.created_at.isoformat(),
             "updatedAt": new_user.created_at.isoformat()
@@ -139,7 +140,7 @@ async def sign_up(
 
 @router.post("/sign-in/email")
 async def sign_in(
-    request: SignInRequest,
+    request_data: SignInRequest,
     session: Session = Depends(get_session)
 ):
     """
@@ -148,7 +149,7 @@ async def sign_in(
     Compatible with Better Auth sign-in flow
     """
     # Find user by email
-    statement = select(User).where(User.email == request.email.lower())
+    statement = select(User).where(User.email == request_data.email.lower())
     user = session.exec(statement).first()
 
     if not user:
@@ -158,7 +159,7 @@ async def sign_in(
         )
 
     # Verify password
-    if not verify_password(request.password, user.password_hash):
+    if not verify_password(request_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
@@ -184,19 +185,62 @@ async def sign_in(
     }
 
 
-@router.get("/get-session")
-async def get_session_endpoint():
+@router.get("/session")
+async def get_session(request: Request):
     """
     Get current session
 
     Compatible with Better Auth session retrieval
-    Note: This is a simplified version. In production, you'd verify the session cookie/token.
     """
-    # For now, return null session (frontend will handle this)
-    # In a full implementation, you'd verify the session token from cookies
-    return {
-        "data": None
-    }
+    # Extract token from Authorization header or cookies
+    auth_header = request.headers.get("Authorization")
+    token = None
+
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header[len("Bearer "):]
+    elif auth_header:
+        token = auth_header
+
+    if not token:
+        # No token provided
+        return {"data": None}
+
+    try:
+        # Decode the JWT token
+        payload = jwt.decode(token, settings.better_auth_secret, algorithms=["HS256"])
+        user_id: str = payload.get("sub")
+        email: str = payload.get("email")
+
+        if user_id is None or email is None:
+            return {"data": None}
+
+        # Verify user exists in database
+        session_local = next(get_session())
+        statement = select(User).where(User.id == user_id)
+        user = session_local.exec(statement).first()
+        session_local.close()
+
+        if user is None:
+            return {"data": None}
+
+        # Return session data
+        return {
+            "data": {
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "name": user.email.split("@")[0],
+                    "emailVerified": False,
+                    "createdAt": user.created_at.isoformat(),
+                    "updatedAt": user.created_at.isoformat()
+                },
+                "token": token,
+                "expiresAt": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
+            }
+        }
+    except JWTError:
+        # Invalid token
+        return {"data": None}
 
 
 @router.post("/sign-out")

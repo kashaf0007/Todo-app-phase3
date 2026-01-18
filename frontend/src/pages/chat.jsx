@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import apiClient from '../lib/axios-instance';
 
 const ChatPage = () => {
   const [userInput, setUserInput] = useState('');
@@ -35,17 +35,12 @@ const ChatPage = () => {
     setIsLoading(true);
 
     try {
-      // Send message to backend
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/${userId}/chat`,
+      // Send message to backend using the configured API client
+      const response = await apiClient.post(
+        `/api/${userId}/chat`,
         {
           conversation_id: conversationId,
           message: userInput
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
         }
       );
 
@@ -90,15 +85,7 @@ const ChatPage = () => {
 
   const refreshTasks = async () => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/${userId}/tasks`,
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token') || ''}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await apiClient.get(`/api/${userId}/tasks`);
       setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -128,30 +115,31 @@ const ChatPage = () => {
  * - Adaptive text sizing and padding for different screen sizes
  * - Flexible grid layouts that adjust based on available space
  */
+
 return (
-    <div className="flex flex-col h-screen max-h-[100svh] bg-gradient-to-br from-gray-50 to-gray-100 rounded-none sm:rounded-2xl shadow-none sm:shadow-xl overflow-hidden border border-gray-200">
+    <div className="flex flex-col min-h-[100svh] bg-gradient-to-br from-gray-50 to-gray-100 rounded-none md:rounded-2xl shadow-none md:shadow-xl overflow-hidden border border-gray-200">
       {/* Header */}
-      <header className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white p-3 sm:p-4">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
-          <div className="flex-1 flex items-center gap-2 sm:gap-3">
-            <div className="bg-white/20 p-2 rounded-lg sm:rounded-xl backdrop-blur-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <header className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white p-2 sm:p-3 md:p-4">
+        <div className="flex flex-col xs:flex-row justify-between items-center gap-2 sm:gap-3 md:gap-4">
+          <div className="flex-1 flex items-center gap-1.5 sm:gap-2 md:gap-3 min-w-0">
+            <div className="bg-white/20 p-1.5 sm:p-2 rounded-lg backdrop-blur-sm flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
             </div>
-            <div>
-              <h1 className="text-medium sm:text-xl md:text-2xl font-bold">RAG Todo Chatbot</h1>
-              <p className="text-indigo-200 text-xs sm:text-sm">Manage your tasks with natural language</p>
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-medium md:text-xl lg:text-2xl font-bold truncate">RAG Todo Chatbot</h1>
+              <p className="text-indigo-200 text-xs sm:text-sm hidden xs:block">Manage your tasks with natural language</p>
             </div>
           </div>
           <button
             onClick={toggleTaskPanel}
-            className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1 sm:gap-2 whitespace-nowrap shadow-md hover:shadow-lg text-sm"
+            className="bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 rounded-lg transition-all duration-300 flex items-center gap-1 sm:gap-2 whitespace-nowrap shadow-md hover:shadow-lg text-xs sm:text-sm"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-            {showTaskPanel ? 'Hide Tasks' : 'Show Tasks'}
+            <span className="truncate max-w-[60px] xs:max-w-[80px]">{showTaskPanel ? 'Hide Tasks' : 'Show Tasks'}</span>
           </button>
         </div>
       </header>
