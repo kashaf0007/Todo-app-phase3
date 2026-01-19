@@ -38,9 +38,35 @@ setup_error_handlers(app)
 
 # Mount the .well-known directory to serve static files
 import os
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # Go up 3 levels to project root
-well_known_path = os.path.join(project_root, ".well-known")
-app.mount("/.well-known", StaticFiles(directory=well_known_path), name="well-known")
+
+# Look for .well-known directory in multiple possible locations
+well_known_path = None
+
+# First, try the current working directory
+project_root = os.getcwd()
+well_known_path_candidate = os.path.join(project_root, ".well-known")
+if os.path.exists(well_known_path_candidate):
+    well_known_path = well_known_path_candidate
+
+# If not found in cwd, try relative to the main.py file location (go up 3 levels to project root)
+if well_known_path is None:
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    well_known_path_candidate = os.path.join(project_root, ".well-known")
+    if os.path.exists(well_known_path_candidate):
+        well_known_path = well_known_path_candidate
+
+# If still not found, try one level up from current working directory (for Docker container scenario)
+if well_known_path is None:
+    project_root = os.path.dirname(os.getcwd())
+    well_known_path_candidate = os.path.join(project_root, ".well-known")
+    if os.path.exists(well_known_path_candidate):
+        well_known_path = well_known_path_candidate
+
+# Only mount if the directory exists
+if well_known_path:
+    app.mount("/.well-known", StaticFiles(directory=well_known_path), name="well-known")
+else:
+    print("Warning: .well-known directory not found in any expected location. Skipping mount.")
 
 # Include routers
 app.include_router(chat_router)
