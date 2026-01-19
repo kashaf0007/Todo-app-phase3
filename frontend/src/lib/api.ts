@@ -3,10 +3,27 @@
  * Wrapper for backend API requests with JWT attachment
  */
 
-import { getAuthToken, signOut } from "./auth-client";
+import { getAuthToken, signOut, getCurrentUser } from "./auth-client";
 import type { Task, TaskCreate, TaskUpdate, TaskCompletionToggle } from "../types/task";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+// Helper function to decode JWT token and extract user ID
+function getUserIdFromToken(token: string): string | null {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    const decodedToken = JSON.parse(jsonPayload);
+    return decodedToken.sub; // 'sub' field typically contains the user ID in JWT
+  } catch (error) {
+    console.error('Error decoding JWT token:', error);
+    return null;
+  }
+}
 
 /**
  * Generic API request with JWT authentication
@@ -58,6 +75,20 @@ export async function apiRequest<T>(
       throw new Error("Access denied");
     }
 
+    // Handle 400 Bad Request (often due to user ID mismatch)
+    if (response.status === 400) {
+      console.error(`400 Bad Request for endpoint: ${endpoint}`);
+      const error = await response.json().catch(() => ({}));
+      console.error("Error details:", error);
+
+      // Check if it's a user ID mismatch error
+      if (error.detail && error.detail.includes("user")) {
+        console.error("User ID in token may not match user ID in URL path");
+      }
+
+      throw new Error(error.detail || "Bad Request - please check your authentication");
+    }
+
     // Handle 404 Not Found
     if (response.status === 404) {
       throw new Error("Resource not found");
@@ -97,6 +128,17 @@ export const taskApi = {
    * List all tasks for authenticated user (GET /api/{user_id}/tasks)
    */
   list: async (userId: string): Promise<Task[]> => {
+    // Validate that the user ID matches the authenticated user
+    const token = getAuthToken();
+    if (token) {
+      const tokenUserId = getUserIdFromToken(token);
+      if (tokenUserId && tokenUserId !== userId) {
+        console.warn(`User ID mismatch: token user ID ${tokenUserId} does not match request user ID ${userId}`);
+        // Use the token user ID instead of the passed user ID to prevent 400 errors
+        console.log(`Using token user ID ${tokenUserId} instead of passed user ID ${userId}`);
+        return apiRequest<Task[]>(`/api/${tokenUserId}/tasks`);
+      }
+    }
     return apiRequest<Task[]>(`/api/${userId}/tasks`);
   },
 
@@ -104,6 +146,20 @@ export const taskApi = {
    * Create new task (POST /api/{user_id}/tasks)
    */
   create: async (userId: string, data: TaskCreate): Promise<Task> => {
+    // Validate that the user ID matches the authenticated user
+    const token = getAuthToken();
+    if (token) {
+      const tokenUserId = getUserIdFromToken(token);
+      if (tokenUserId && tokenUserId !== userId) {
+        console.warn(`User ID mismatch: token user ID ${tokenUserId} does not match request user ID ${userId}`);
+        // Use the token user ID instead of the passed user ID to prevent 400 errors
+        console.log(`Using token user ID ${tokenUserId} instead of passed user ID ${userId}`);
+        return apiRequest<Task>(`/api/${tokenUserId}/tasks`, {
+          method: "POST",
+          body: JSON.stringify(data),
+        });
+      }
+    }
     return apiRequest<Task>(`/api/${userId}/tasks`, {
       method: "POST",
       body: JSON.stringify(data),
@@ -114,6 +170,17 @@ export const taskApi = {
    * Get specific task (GET /api/{user_id}/tasks/{id})
    */
   get: async (userId: string, taskId: number): Promise<Task> => {
+    // Validate that the user ID matches the authenticated user
+    const token = getAuthToken();
+    if (token) {
+      const tokenUserId = getUserIdFromToken(token);
+      if (tokenUserId && tokenUserId !== userId) {
+        console.warn(`User ID mismatch: token user ID ${tokenUserId} does not match request user ID ${userId}`);
+        // Use the token user ID instead of the passed user ID to prevent 400 errors
+        console.log(`Using token user ID ${tokenUserId} instead of passed user ID ${userId}`);
+        return apiRequest<Task>(`/api/${tokenUserId}/tasks/${taskId}`);
+      }
+    }
     return apiRequest<Task>(`/api/${userId}/tasks/${taskId}`);
   },
 
@@ -121,6 +188,20 @@ export const taskApi = {
    * Update task (PUT /api/{user_id}/tasks/{id})
    */
   update: async (userId: string, taskId: number, data: TaskUpdate): Promise<Task> => {
+    // Validate that the user ID matches the authenticated user
+    const token = getAuthToken();
+    if (token) {
+      const tokenUserId = getUserIdFromToken(token);
+      if (tokenUserId && tokenUserId !== userId) {
+        console.warn(`User ID mismatch: token user ID ${tokenUserId} does not match request user ID ${userId}`);
+        // Use the token user ID instead of the passed user ID to prevent 400 errors
+        console.log(`Using token user ID ${tokenUserId} instead of passed user ID ${userId}`);
+        return apiRequest<Task>(`/api/${tokenUserId}/tasks/${taskId}`, {
+          method: "PUT",
+          body: JSON.stringify(data),
+        });
+      }
+    }
     return apiRequest<Task>(`/api/${userId}/tasks/${taskId}`, {
       method: "PUT",
       body: JSON.stringify(data),
@@ -131,6 +212,19 @@ export const taskApi = {
    * Delete task (DELETE /api/{user_id}/tasks/{id})
    */
   delete: async (userId: string, taskId: number): Promise<void> => {
+    // Validate that the user ID matches the authenticated user
+    const token = getAuthToken();
+    if (token) {
+      const tokenUserId = getUserIdFromToken(token);
+      if (tokenUserId && tokenUserId !== userId) {
+        console.warn(`User ID mismatch: token user ID ${tokenUserId} does not match request user ID ${userId}`);
+        // Use the token user ID instead of the passed user ID to prevent 400 errors
+        console.log(`Using token user ID ${tokenUserId} instead of passed user ID ${userId}`);
+        return apiRequest<void>(`/api/${tokenUserId}/tasks/${taskId}`, {
+          method: "DELETE",
+        });
+      }
+    }
     return apiRequest<void>(`/api/${userId}/tasks/${taskId}`, {
       method: "DELETE",
     });
@@ -144,6 +238,20 @@ export const taskApi = {
     taskId: number,
     data: TaskCompletionToggle
   ): Promise<Task> => {
+    // Validate that the user ID matches the authenticated user
+    const token = getAuthToken();
+    if (token) {
+      const tokenUserId = getUserIdFromToken(token);
+      if (tokenUserId && tokenUserId !== userId) {
+        console.warn(`User ID mismatch: token user ID ${tokenUserId} does not match request user ID ${userId}`);
+        // Use the token user ID instead of the passed user ID to prevent 400 errors
+        console.log(`Using token user ID ${tokenUserId} instead of passed user ID ${userId}`);
+        return apiRequest<Task>(`/api/${tokenUserId}/tasks/${taskId}/complete`, {
+          method: "PATCH",
+          body: JSON.stringify(data),
+        });
+      }
+    }
     return apiRequest<Task>(`/api/${userId}/tasks/${taskId}/complete`, {
       method: "PATCH",
       body: JSON.stringify(data),

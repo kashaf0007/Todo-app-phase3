@@ -113,7 +113,7 @@ export default function LoginForm() {
 
       <div className="mt-lg text-center">
         <p className="text-secondary-200">
-          Don&apos;t have an account?{" "}
+          Don't have an account?{" "}
           <a href="/signup" className="text-primary-300 font-medium hover:text-primary-200 transition-colors">
             Sign up
           </a>
