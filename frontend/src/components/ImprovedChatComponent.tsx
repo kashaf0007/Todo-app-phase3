@@ -574,7 +574,7 @@ const ImprovedChatComponent = () => {
                   placeholder="Type your message here (e.g., 'Add a task to buy groceries', 'What was my last task?', 'Complete the shopping task')..."
                   className="w-full border border-gray-300 rounded-xl sm:rounded-2xl p-4 min-h-[60px] max-h-40 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm text-sm transition-all duration-300 hover:shadow-md"
                   disabled={isLoading}
-                  rows="1"
+                  rows={1}
                 />
                 <button
                   onClick={handleSendMessage}
